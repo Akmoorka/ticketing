@@ -27,9 +27,11 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
     "drf_spectacular",
+    "apps.common",
 ]
 
 MIDDLEWARE = [
+    "apps.common.middleware.RequestIdMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -133,3 +135,31 @@ EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "1025"))
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "tickets@example.com")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 ADMINS = [("Admin", os.environ.get("ADMIN_EMAIL", "admin@example.com"))]
+
+# Логи: стандартный logging в stdout контейнера (docker compose logs).
+# В каждой строке — request_id. Письмо админам при 500 шлёт встроенный
+# AdminEmailHandler (логгер django.request из настроек Django по умолчанию).
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "request_id": {"()": "apps.common.log_filters.RequestIdFilter"},
+    },
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s %(levelname)s [%(request_id)s] %(name)s: %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "formatter": "standard",
+            "filters": ["request_id"],
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": os.environ.get("LOG_LEVEL", "INFO"),
+    },
+}
