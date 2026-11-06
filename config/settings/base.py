@@ -130,11 +130,18 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_TIME_LIMIT = 300
 
 # Письма: локально и в compose их ловит Mailpit (SMTP на порту 1025).
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "1025"))
+MAILERS = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+        "OPTIONS": {
+            "host": os.environ.get("EMAIL_HOST", "localhost"),
+            "port": int(os.environ.get("EMAIL_PORT", "1025")),
+        },
+    },
+}
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "tickets@example.com")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
-ADMINS = [("Admin", os.environ.get("ADMIN_EMAIL", "admin@example.com"))]
+ADMINS = [os.environ.get("ADMIN_EMAIL", "admin@example.com")]
 
 # Логи: стандартный logging в stdout контейнера (docker compose logs).
 # В каждой строке — request_id. Письмо админам при 500 шлёт встроенный
