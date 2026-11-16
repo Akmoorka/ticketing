@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "django_filters",
     "drf_spectacular",
     "apps.common",
+    "apps.accounts",
 ]
 
 MIDDLEWARE = [
@@ -40,6 +41,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+AUTH_USER_MODEL = "accounts.User"
 
 ROOT_URLCONF = "config.urls"
 
