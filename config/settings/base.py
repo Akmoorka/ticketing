@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "apps.common",
     "apps.accounts",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -144,6 +145,8 @@ MAILERS = {
 }
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "tickets@example.com")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
+# Адаптер отправки писем (порт EmailSender, ступень 4)
+EMAIL_SENDER = "apps.notifications.adapters.smtp.SmtpEmailSender"
 ADMINS = [os.environ.get("ADMIN_EMAIL", "admin@example.com")]
 
 # Логи: стандартный logging в stdout контейнера (docker compose logs).
