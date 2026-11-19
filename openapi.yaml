@@ -2,5 +2,97 @@ openapi: 3.0.3
 info:
   title: Ticketing API
   version: 0.0.0
-paths: {}
-components: {}
+paths:
+  /api/v1/auth/register/:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterOutput'
+          description: ''
+  /api/v1/auth/verify-email/:
+    post:
+      operationId: auth_verify_email_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailInput'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyEmailOutput'
+          description: ''
+components:
+  schemas:
+    RegisterInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          maxLength: 128
+      required:
+      - email
+      - password
+    RegisterOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+      required:
+      - email
+      - id
+    VerifyEmailInput:
+      type: object
+      properties:
+        token:
+          type: string
+          maxLength: 1000
+      required:
+      - token
+    VerifyEmailOutput:
+      type: object
+      properties:
+        email_verified:
+          type: boolean
+      required:
+      - email_verified
