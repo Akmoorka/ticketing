@@ -8,6 +8,12 @@ HEADER = "X-Request-ID"
 # Чужой id принимаем только если он безопасен для логов
 VALID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 logger = logging.getLogger("apps.common.requests")
+# Токен приглашения лежит в пути: в лог его не пускаем
+SECRET_PATH = re.compile(r"^(.*/invitations/)[^/]+(/accept/?)$")
+
+
+def mask_path(path: str) -> str:
+    return SECRET_PATH.sub(r"\1***\2", path)
 
 
 class RequestIdMiddleware:
@@ -27,7 +33,7 @@ class RequestIdMiddleware:
             # query string не логируем: в ней может быть email
             logger.info(
                 "%s %s -> %s %sms",
-                request.method, request.path, response.status_code, elapsed_ms,
+                request.method, mask_path(request.path), response.status_code, elapsed_ms,
             )
             return response
         finally:
