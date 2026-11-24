@@ -5,12 +5,15 @@ from datetime import timedelta
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from apps.audit.services import record as audit_record
 from apps.notifications.services import queue_email
 
 from . import selectors
 from .exceptions import (
     InvalidInvitation,
     InvitationNotForUser,
+    LastOwner,
+    MemberNotFound,
     OrganizationNotFound,
     RoleNotAllowed,
     SlugTaken,
@@ -91,3 +94,60 @@ def invitation_accept(*, user, token: str) -> Membership:
     invitation.accepted_at = now
     invitation.save(update_fields=["accepted_at"])
     return membership
+
+
+def _lock_owners_and_check_actor(*, actor, organization_id):
+    """Заблокировать строки владельцев (против гонки) и проверить, что actor сам owner."""
+    owners = list(
+        Membership.objects.select_for_update().filter(
+            organization_id=organization_id, role=Membership.Role.OWNER
+        )
+    )
+    actor_membership = selectors.membership_for(actor, organization_id)
+    if actor_membership is None:
+        raise OrganizationNotFound()
+    if actor_membership.role != Membership.Role.OWNER:
+        raise RoleNotAllowed()
+    return owners
+
+
+@transaction.atomic
+def member_change_role(*, actor, organization_id, user_id, role: str) -> Membership:
+    owners = _lock_owners_and_check_actor(actor=actor, organization_id=organization_id)
+    target = Membership.objects.filter(organization_id=organization_id, user_id=user_id).first()
+    if target is None:
+        raise MemberNotFound()
+    if target.role == role:
+        return target
+    if target.role == Membership.Role.OWNER and len(owners) <= 1:
+        raise LastOwner()
+    old_role = target.role
+    target.role = role
+    target.save(update_fields=["role"])
+    audit_record(
+        actor=actor,
+        action="member.role_changed",
+        object_type="membership",
+        object_id=target.pk,
+        data={"organization_id": organization_id, "user_id": user_id, "from": old_role, "to": role},
+    )
+    return target
+
+
+@transaction.atomic
+def member_remove(*, actor, organization_id, user_id) -> None:
+    owners = _lock_owners_and_check_actor(actor=actor, organization_id=organization_id)
+    target = Membership.objects.filter(organization_id=organization_id, user_id=user_id).first()
+    if target is None:
+        raise MemberNotFound()
+    if target.role == Membership.Role.OWNER and len(owners) <= 1:
+        raise LastOwner()
+    membership_id, old_role = target.pk, target.role
+    target.delete()
+    audit_record(
+        actor=actor,
+        action="member.removed",
+        object_type="membership",
+        object_id=membership_id,
+        data={"organization_id": organization_id, "user_id": user_id, "role": old_role},
+    )

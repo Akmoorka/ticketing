@@ -1,13 +1,19 @@
+from contextlib import contextmanager
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.exceptions import Conflict
+
 from . import services
 from .exceptions import (
     InvalidInvitation,
     InvitationNotForUser,
+    LastOwner,
+    MemberNotFound,
     OrganizationNotFound,
     RoleNotAllowed,
     SlugTaken,
@@ -107,3 +113,51 @@ class InvitationAcceptApi(APIView):
             {"organization_id": m.organization_id, "role": m.role}
         )
         return Response(out.data)
+
+
+class MemberRoleInputSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=Membership.Role.choices)
+
+
+class MemberOutputSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    role = serializers.CharField()
+
+
+@contextmanager
+def _translate_member_errors():
+    try:
+        yield
+    except (OrganizationNotFound, MemberNotFound):
+        raise NotFound("Не найдено.")
+    except RoleNotAllowed:
+        raise PermissionDenied("Управлять участниками может только владелец организации.")
+    except LastOwner:
+        raise Conflict("Нельзя удалить или понизить последнего владельца.", code="last_owner")
+
+
+class MemberDetailApi(APIView):
+    @extend_schema(
+        request=MemberRoleInputSerializer,
+        responses={200: MemberOutputSerializer},
+        tags=["organizations"],
+    )
+    def patch(self, request, organization_id, user_id):
+        data = MemberRoleInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        with _translate_member_errors():
+            m = services.member_change_role(
+                actor=request.user,
+                organization_id=organization_id,
+                user_id=user_id,
+                role=data.validated_data["role"],
+            )
+        return Response(MemberOutputSerializer({"user_id": m.user_id, "role": m.role}).data)
+
+    @extend_schema(responses={204: None}, tags=["organizations"])
+    def delete(self, request, organization_id, user_id):
+        with _translate_member_errors():
+            services.member_remove(
+                actor=request.user, organization_id=organization_id, user_id=user_id
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
