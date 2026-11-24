@@ -3,6 +3,28 @@ info:
   title: Ticketing API
   version: 0.0.0
 paths:
+  /api/v1/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutInput'
+        required: true
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/auth/register/:
     post:
       operationId: auth_register_create
@@ -28,6 +50,59 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RegisterOutput'
+          description: ''
+  /api/v1/auth/token/:
+    post:
+      operationId: auth_token_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+          description: ''
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
           description: ''
   /api/v1/auth/verify-email/:
     post:
@@ -57,6 +132,27 @@ paths:
           description: ''
 components:
   schemas:
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          maxLength: 128
+      required:
+      - email
+      - password
+    LogoutInput:
+      type: object
+      properties:
+        refresh:
+          type: string
+          maxLength: 2000
+      required:
+      - refresh
     RegisterInput:
       type: object
       properties:
@@ -81,6 +177,27 @@ components:
       required:
       - email
       - id
+    TokenPair:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
     VerifyEmailInput:
       type: object
       properties:

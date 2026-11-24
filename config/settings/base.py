@@ -104,6 +104,7 @@ CACHES = {
 }
 
 REST_FRAMEWORK = {
+    "DEFAULT_THROTTLE_RATES": {"register": "10/hour"},
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
