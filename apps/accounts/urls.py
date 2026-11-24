@@ -9,4 +9,5 @@ urlpatterns = [
     path("auth/token/", token_apis.LoginApi.as_view(), name="auth-token"),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="auth-token-refresh"),
     path("auth/logout/", token_apis.LogoutApi.as_view(), name="auth-logout"),
+    path("me/", apis.MeApi.as_view(), name="me"),
 ]

@@ -7,8 +7,10 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from apps.common.exceptions import Conflict
+
 from . import services
-from .exceptions import EmailAlreadyRegistered, InvalidVerificationToken
+from .exceptions import EmailAlreadyRegistered, HasFutureTickets, InvalidVerificationToken
 
 
 class RegisterInputSerializer(serializers.Serializer):
@@ -70,3 +72,16 @@ class VerifyEmailApi(APIView):
         except InvalidVerificationToken:
             raise ValidationError({"token": ["Токен недействителен или просрочен."]})
         return Response({"status": "verified"})
+
+
+class MeApi(APIView):
+    @extend_schema(responses={204: None}, tags=["auth"])
+    def delete(self, request):
+        try:
+            services.user_anonymize(user=request.user)
+        except HasFutureTickets:
+            raise Conflict(
+                "У вас есть билеты на будущие мероприятия, аккаунт удалить нельзя.",
+                code="has_future_tickets",
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)

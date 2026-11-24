@@ -149,6 +149,9 @@ MAILERS = {
 }
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "tickets@example.com")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
+# Проверки «есть билеты на будущие мероприятия»: пути к функциям (user) -> bool.
+# Пока пусто; в КТ-3 модуль билетов добавит сюда свою функцию.
+USER_HAS_FUTURE_TICKETS_CHECKS = []
 # Адаптер отправки писем (порт EmailSender, ступень 4)
 EMAIL_SENDER = "apps.notifications.adapters.smtp.SmtpEmailSender"
 ADMINS = [os.environ.get("ADMIN_EMAIL", "admin@example.com")]
