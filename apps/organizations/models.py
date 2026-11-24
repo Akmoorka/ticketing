@@ -35,3 +35,20 @@ class Membership(models.Model):
                 fields=["user", "organization"], name="uniq_membership_user_org"
             )
         ]
+
+
+class Invitation(models.Model):
+    """Приглашение в организацию. Сам токен не хранится, только его хэш."""
+
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="invitations"
+    )
+    email = models.EmailField()
+    role = models.CharField(max_length=20, choices=Membership.Role.choices)
+    token_hash = models.CharField(max_length=64, unique=True)
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="sent_invitations"
+    )
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -130,6 +130,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/VerifyEmailOutput'
           description: ''
+  /api/v1/invitations/{token}/accept/:
+    post:
+      operationId: invitations_accept_create
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - organizations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationAcceptOutput'
+          description: ''
   /api/v1/organizations/:
     post:
       operationId: organizations_create
@@ -156,8 +176,80 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrganizationOutput'
           description: ''
+  /api/v1/organizations/{organization_id}/invitations/:
+    post:
+      operationId: organizations_invitations_create
+      parameters:
+      - in: path
+        name: organization_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - organizations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationCreateInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InvitationCreateInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InvitationCreateInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationOutput'
+          description: ''
 components:
   schemas:
+    InvitationAcceptOutput:
+      type: object
+      properties:
+        organization_id:
+          type: integer
+        role:
+          type: string
+      required:
+      - organization_id
+      - role
+    InvitationCreateInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - email
+      - role
+    InvitationOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+      required:
+      - email
+      - expires_at
+      - id
+      - role
     LoginInput:
       type: object
       properties:
@@ -232,6 +324,16 @@ components:
       required:
       - email
       - id
+    RoleEnum:
+      enum:
+      - owner
+      - manager
+      - checker
+      type: string
+      description: |-
+        * `owner` - Владелец
+        * `manager` - Менеджер
+        * `checker` - Контролёр
     TokenPair:
       type: object
       properties:
