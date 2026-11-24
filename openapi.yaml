@@ -209,7 +209,7 @@ components:
     VerifyEmailOutput:
       type: object
       properties:
-        email_verified:
-          type: boolean
+        status:
+          type: string
       required:
-      - email_verified
+      - status

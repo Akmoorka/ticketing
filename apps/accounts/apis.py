@@ -26,7 +26,7 @@ class VerifyEmailInputSerializer(serializers.Serializer):
 
 
 class VerifyEmailOutputSerializer(serializers.Serializer):
-    email_verified = serializers.BooleanField()
+    status = serializers.CharField()
 
 
 class RegisterApi(APIView):
@@ -69,4 +69,4 @@ class VerifyEmailApi(APIView):
             services.verify_email(token=data.validated_data["token"])
         except InvalidVerificationToken:
             raise ValidationError({"token": ["Токен недействителен или просрочен."]})
-        return Response({"email_verified": True})
+        return Response({"status": "verified"})

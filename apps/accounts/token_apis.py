@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,6 +9,12 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from . import login_throttle
+
+
+class InvalidCredentials(APIException):
+    status_code = 401
+    default_detail = "Неверный email или пароль."
+    default_code = "invalid_credentials"
 
 
 class LoginInputSerializer(serializers.Serializer):
@@ -42,9 +48,7 @@ class LoginApi(APIView):
         if user is None:
             login_throttle.register_failure(ip, email)
             # один и тот же ответ для «нет такого email» и «неверный пароль»
-            return Response(
-                {"detail": "Неверный email или пароль."}, status=status.HTTP_401_UNAUTHORIZED
-            )
+            raise InvalidCredentials()
         login_throttle.reset(ip, email)
         refresh = RefreshToken.for_user(user)
         return Response({"access": str(refresh.access_token), "refresh": str(refresh)})

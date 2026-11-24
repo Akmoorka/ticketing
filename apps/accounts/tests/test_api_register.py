@@ -42,13 +42,13 @@ def test_register_returns_201_without_password_and_sends_email(
 def test_register_duplicate_email_is_400(api, django_capture_on_commit_callbacks):
     register(api, django_capture_on_commit_callbacks)
     r = register(api, django_capture_on_commit_callbacks, email="ANN@example.com")
-    assert r.status_code == 400 and "email" in r.json()
+    assert r.status_code == 400 and "email" in r.json()["extra"]["errors"]
     assert User.objects.count() == 1
 
 
 def test_register_weak_password_is_400(api, django_capture_on_commit_callbacks):
     r = register(api, django_capture_on_commit_callbacks, password="123")
-    assert r.status_code == 400 and "password" in r.json()
+    assert r.status_code == 400 and "password" in r.json()["extra"]["errors"]
 
 
 def test_register_ignores_broken_authorization_header(api, django_capture_on_commit_callbacks):
@@ -84,7 +84,7 @@ def test_verify_email_flow(api, outbox, django_capture_on_commit_callbacks):
     register(api, django_capture_on_commit_callbacks)
     token = outbox[0]["body"].splitlines()[1]
     r = api.post(VERIFY, {"token": token}, format="json")
-    assert r.status_code == 200 and r.json() == {"email_verified": True}
+    assert r.status_code == 200 and r.json() == {"status": "verified"}
     assert User.objects.get().email_verified_at is not None
 
 

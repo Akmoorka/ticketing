@@ -52,15 +52,15 @@ def test_weak_password_is_rejected():
     assert User.objects.count() == 0
 
 
-def test_verify_email_marks_user_verified_and_is_repeatable(
+def test_verify_email_marks_user_verified_and_token_is_one_time(
     outbox, django_capture_on_commit_callbacks
 ):
     user = register(django_capture_on_commit_callbacks)
     token = token_from(outbox)
     verified = services.verify_email(token=token)
     assert verified.pk == user.pk and verified.email_verified_at is not None
-    first = verified.email_verified_at
-    assert services.verify_email(token=token).email_verified_at == first
+    with pytest.raises(InvalidVerificationToken):
+        services.verify_email(token=token)  # токен одноразовый
 
 
 def test_garbage_token_is_rejected():

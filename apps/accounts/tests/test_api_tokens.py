@@ -107,3 +107,19 @@ def test_register_is_limited_to_10_per_hour_per_ip(api):
     for _ in range(10):
         assert api.post(REGISTER, {}, format="json").status_code == 400
     assert api.post(REGISTER, {}, format="json").status_code == 429
+
+
+def test_throttled_response_has_envelope_and_retry_after(api, user):
+    for _ in range(5):
+        login(api, password="wrong")
+    r = login(api, password="wrong")
+    assert r.status_code == 429
+    assert r.json()["code"] == "throttled"
+    assert r.json()["extra"]["retry_after"] == 300
+    assert r["Retry-After"] == "300"
+
+
+def test_wrong_password_uses_envelope(api, user):
+    r = login(api, password="wrong")
+    assert r.status_code == 401
+    assert r.json()["code"] == "invalid_credentials"

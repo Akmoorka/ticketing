@@ -39,7 +39,7 @@ def user_register(*, email: str, password: str) -> User:
 
 
 def verify_email(*, token: str) -> User:
-    """Подтвердить email по токену. Повторное подтверждение безвредно."""
+    """Подтвердить email по токену. Токен одноразовый: повтор даёт ошибку."""
     try:
         data = signing.loads(token, salt=VERIFY_SALT, max_age=VERIFICATION_MAX_AGE)
     except signing.BadSignature:  # включает истёкший токен
@@ -47,9 +47,8 @@ def verify_email(*, token: str) -> User:
     user = User.objects.filter(
         pk=data.get("uid"), email=data.get("email"), is_active=True
     ).first()
-    if user is None:
+    if user is None or user.email_verified_at is not None:  # токен одноразовый
         raise InvalidVerificationToken()
-    if user.email_verified_at is None:
-        user.email_verified_at = timezone.now()
-        user.save(update_fields=["email_verified_at"])
+    user.email_verified_at = timezone.now()
+    user.save(update_fields=["email_verified_at"])
     return user

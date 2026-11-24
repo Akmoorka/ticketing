@@ -104,6 +104,7 @@ CACHES = {
 }
 
 REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
     "DEFAULT_THROTTLE_RATES": {"register": "10/hour"},
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
