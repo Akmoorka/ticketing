@@ -130,6 +130,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/VerifyEmailOutput'
           description: ''
+  /api/v1/organizations/:
+    post:
+      operationId: organizations_create
+      tags:
+      - organizations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationCreateInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrganizationCreateInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrganizationCreateInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationOutput'
+          description: ''
 components:
   schemas:
     LoginInput:
@@ -153,6 +179,35 @@ components:
           maxLength: 2000
       required:
       - refresh
+    OrganizationCreateInput:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - name
+      - slug
+    OrganizationOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+      required:
+      - id
+      - name
+      - slug
+      - status
     RegisterInput:
       type: object
       properties:
@@ -213,3 +268,8 @@ components:
           type: string
       required:
       - status
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
